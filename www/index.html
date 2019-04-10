@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>SCR GMCC: Gyroscope Monitorization for Cable Conditioning</title>
+    <script src="three.js"></script>
+    <script src="OrbitControls.js"></script>
+    <script type="text/javascript" src="Water.js"></script>
+    <script type="text/javascript" src="Sky.js"></script>
+
+    <link rel="stylesheet" href="w3.css">
+
+    <style>
+        /* roboto-mono-regular - latin */
+        @font-face {
+            font-family: 'Roboto Mono';
+            font-style: normal;
+            font-weight: 400;
+            src: url('fonts/roboto-mono-v6-latin-regular.eot');
+            /* IE9 Compat Modes */
+            src: local('Roboto Mono'), local('RobotoMono-Regular'),
+                url('fonts/roboto-mono-v6-latin-regular.eot?#iefix') format('embedded-opentype'),
+                /* IE6-IE8 */
+                url('fonts/roboto-mono-v6-latin-regular.woff2') format('woff2'),
+                /* Super Modern Browsers */
+                url('fonts/roboto-mono-v6-latin-regular.woff') format('woff'),
+                /* Modern Browsers */
+                url('fonts/roboto-mono-v6-latin-regular.ttf') format('truetype'),
+                /* Safari, Android, iOS */
+                url('fonts/roboto-mono-v6-latin-regular.svg#RobotoMono') format('svg');
+            /* Legacy iOS */
+        }
+
+        html {
+            margin: 0px;
+            padding: 0px;
+        }
+
+        body {
+            padding: 0px;
+            margin: 0px;
+            background-color: rgb(0, 43, 59);
+            font-family: 'Roboto Mono', sans-serif;
+            overflow: hidden;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        div#commands {
+            background-color: rgb(102, 102, 102, 0.5);
+            width: 100%;
+            height: 80px;
+            position: absolute;
+            padding: 4px;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-sizing: border-box;
+        }
+
+        div.group {
+            display: inline-block;
+            width: 250px;
+            /* height: 80px; */
+            overflow: hidden;
+            position: relative;
+            z-index: 10;
+        }
+
+        div.drop-group{
+            display: inline-block;
+            width: 250px;
+            position: absolute !important;
+            right: 4px;
+            top: 150px;
+            text-align: right;
+            z-index: 10;
+
+        }
+        div.options {
+            position: absolute;
+            right: 4px;
+            width: 200px;
+            text-align: right;
+            overflow: visible;
+        }
+
+        div.option {
+            color: #FF6000;
+            background: #333;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 2px;
+            margin: 1px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            
+        }
+
+        div.option:hover {
+            background: #FF6000;
+            color: #333;
+        }
+
+        div.option.active {
+            background: #FF6000;
+            color: #333;
+        }
+
+        label.for {
+            position: absolute;
+            top: 20px;
+            color: rgb(255, 96, 0, 1);
+            font: 400 24px 'Roboto Mono';
+            cursor: text;
+            transition: .25s ease;
+        }
+
+        input[type=password] {
+            display: block;
+            width: 100%;
+            padding-top: 24px;
+            border: none;
+            border-radius: 0;
+            color: white;
+            background: #333;
+            font-size: 24px;
+            transition: .3s ease;
+        }
+
+        input[type=password]:valid~label.for {
+            top: 0;
+            font: 700 16px 'Roboto Mono';
+            color: rgb(255, 96, 0, 0.5);
+        }
+
+        input[type=password]:focus {
+            outline: none;
+        }
+
+        input[type=password]:focus~label.for {
+            top: 0;
+            font: 700 16px 'Roboto Mono';
+            color: rgb(255, 96, 0, 0.5);
+        }
+
+        input[type=password]:focus~.bar:before {
+            transform: translateX(0);
+        }
+
+        input[type=password]:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0px 1000px #333 inset;
+            -webkit-text-fill-color: white !important;
+        }
+
+        .bar {
+            background: rgba(255, 255, 255, 0.5);
+            content: '';
+            width: 300px;
+            height: 3.6666666667px;
+            transition: .3s ease;
+            position: relative;
+        }
+
+        .bar:before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 150%;
+            background: #FF6000;
+            transform: translateX(-100%);
+        }
+
+        ::selection {
+            background: rgba(33, 150, 243, 0.3);
+        }
+
+        div#view {
+
+            width: 100%;
+            background: transparent;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <div class="group">
+        <input type="password" id="pass" required="required" value="">
+        <label class="for" for="pass">admin password</label>
+        <div class="bar"></div>
+    </div>
+    
+    <div class="group options">
+        <div class="option" id="connect"> CONNECT </div>
+        <div class="option" id="zero"> ZERO TURNS </div>
+        <div class="option" id="mode"> GYRO MODE <span class="val">R</span> </div>
+
+        <div class="option" id="hdg"> <span class="val">0</span>º</div>
+        <div class="option" id="turns"><span class="val">0</span> <span class="dir">PRT</span> </div>
+        
+        <div class=" w3-dropdown-hover">
+            <button id="comport" class="w3-button w3-black">Select Com Port</button>
+            <div id="port-list" class="w3-dropdown-content w3-bar-block w3-border">
+                <a href="#" class="w3-bar-item w3-button">---</a>
+            </div>
+        </div>
+    </div>
+        
+
+
+
+    <div id="view">
+    </div>
+
+    <script type="text/javascript" src="./jquery-3.3.1.min.js"></script>
+    
+    <script type="text/javascript" src="./renderer.js"></script>
+    <script type="text/javascript" src="./comms.js"></script>
+
+</body>
+
+</html>
