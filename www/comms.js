@@ -113,7 +113,7 @@ window.onload = function(){
     hdg = $("#hdg");
     turns = $("#turns");
 
-    ws = new WebSocket('ws://localhost:41149');
+    ws = new WebSocket('ws://'+ location.host +':41148');
 
     ws.onopen = wsonopenhandler;
     ws.onmessage = wsonmessagehandler;
