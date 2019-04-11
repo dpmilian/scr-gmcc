@@ -7,9 +7,9 @@ var geometry, material, pod;
 var sky, cubeCamera;
 
 var parameters = {
-    distance: 30,
+    distance: 300,
     inclination: 0.49,
-    azimuth: 0.205
+    azimuth: 0.05
 };
 
 // ------------------------------
@@ -26,14 +26,15 @@ var pointGeometry = new THREE.BufferGeometry();
 pointGeometry.dynamic = true;
 var pointMaterial = new THREE.PointsMaterial( {
      size: .4,
-     vertexColors: THREE.vertexColors,
      color: 0x222299
     //  emissive: 0xFF00FF,
     //  transparent: false, opacity: 0.2
     } );
 
+
 var curveObject = null;
 // var cnt = 0;
+
 
 function updateCurve(theturns){
 
@@ -41,6 +42,7 @@ function updateCurve(theturns){
     if (curveObject != null) scene.remove(curveObject);
     // theturns = -3 + cnt;
     // cnt+= .01;
+    // console.log("Turns at " + theturns);
     if (theturns == 0) return;
 
     var absturns = Math.abs(theturns);
@@ -48,30 +50,29 @@ function updateCurve(theturns){
     var ps = [];
     // var colors = [];
 
-    var zrange = 20;
+    var zrange = 40;
 
-    var ppercurve = zrange * 50 * theturns;
-    if (ppercurve < 200) ppercurve = 200;
+    // var ppercurve = zrange * 50;
+    // if (ppercurve < 200) ppercurve = 200;
 
-    var tstep = absturns / ppercurve;
+    var ppercurve = 500;
+    var tstep =  Math.PI *absturns / (ppercurve);
     var zstep = zrange /ppercurve;
     
-    // for (var i = 0; i < theturns; i++){
-        var i = 0;
-        for (var t = 0, z = 0; t < absturns; t += tstep, z += zstep){
-            i++;
-            ps.push(
-                sign * 6*Math.sin(Math.PI*t)*Math.cos(Math.PI*t),
-                zrange - z + 1, 
-                sign * 6*Math.sin( Math.PI*t)*Math.sin( Math.PI*t)
-                );
-            // var color = new THREE.Color();
-            // color.setRGB(Math.sin(Math.PI*t),0,.5);
-            // // console.log(color);
-            // colors.push(color);
-        }
+    var i = 0;
+
+    for (var i = 0, t = 0, z = 0; i < ppercurve; i++, t += tstep, z += zstep) {
+        ps.push(
+            sign *10*Math.sin(t)*Math.cos(t),
+            zrange - z + 1,
+            sign * 10 * Math.sin(t) * Math.sin(t)
+        );
+        // var color = new THREE.Color();
+        // color.setRGB(Math.sin(Math.PI*t),0,.5);
+        // // console.log(color);
+        // colors.push(color);
+    }
         // console.log("TSTEP " + tstep + ", " + i + " steps vs " + (theturns/ tstep));
-    // }
     pointGeometry.addAttribute('position', new THREE.Float32BufferAttribute(ps,3));
     // pointGeometry.addAttribute('color', new THREE.Float32BufferAttribute(colors,3));
     // pointGeometry.colors = colors;
@@ -88,9 +89,9 @@ function init() {
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, .1, 20000);
     
-    camera.position.set(0,20,30);
-    camera.up = new THREE.Vector3(0,1,0);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    camera.position.set(0,25,60);
+    // camera.up = new THREE.Vector3(0,1,1);
+    // camera.lookAt(0, 10, 0);
 
 
     // var axesHelper = new THREE.AxesHelper( 5 );
@@ -158,7 +159,7 @@ function init() {
     thing = new THREE.Group();
     thing.add(pod);
 
-    grid = new THREE.PolarGridHelper(20, 5, 4, 32, 0x222, 0x449);
+    grid = new THREE.PolarGridHelper(20, 5, 4, 128, 0x222, 0x449);
     grid.position.set(0, 1, 0);
     thing.add(grid);
 
@@ -172,7 +173,7 @@ function init() {
     var hex = 0xffff00;
     
     var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
-    scene.add( arrowHelper );
+    thing.add( arrowHelper );
     scene.add(thing);
     
     var textureLoader2 = new THREE.TextureLoader();
@@ -267,7 +268,7 @@ function animate() {
     }, 1000 / 60);
 
     // water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
-    updateCurve(turns);
+    if (turns) updateCurve(turns.theturns);
 
     renderer.render(scene, camera);
 

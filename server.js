@@ -46,19 +46,25 @@ var comms = {
     
     if (ok != "1") return;
     
-    pos.hdg = (pos.hdg + dhdg) % 360;
+    if (status.mode != 'A'){
+      console.log("Don't know if it is in the right mode, just update the heading and shrug");
+      pos.hdg = dhdg;
+    } else {
+      pos.hdg = (pos.hdg + dhdg) % 360;
     if (pos.hdg < 0) pos.hdg += 360;
-    console.log("Dhdg: " + dhdg + ", absolute: " + pos.hdg);
+    // console.log("Dhdg: " + dhdg + ", absolute: " + pos.hdg);
     pos.turns += dhdg /360;
     pos.cnt++;
 
     
 
-    if (pos.cnt % 5 == 0){     // Send to interface every 50ms (20 samples)
+    if (pos.cnt % 10 == 0){     // Send to interface every 500ms (20 samples)
       if (status.mode != 'A') console.log("Wrong mode, won't log data in absolute heading values (still sending it to viewer)");
       else logGyroData(pos.hdg.toFixed(4), pos.turns.toFixed(4), pos.cnt, status.dive, status.rovname);
-      console.log("[" + pos.cnt + "] Calculated: " + pos.hdg + ", total rotation: " + pos.turns);
+      // console.log("[" + pos.cnt + "] Calculated heading: " + pos.hdg + ", total rotation: " + pos.turns);
 
+    }
+    
       var posmsg = {
         cmd: "GYRO",
         pos: pos
@@ -97,7 +103,7 @@ comms.get_ports();
 
 // Websocket server
 var WSServer = require('ws').Server;
-wss = new WSServer({port: 41149});
+wss = new WSServer({port: 41148});
 
 var wsclients = [];
 
@@ -125,7 +131,7 @@ wss.on('connection', function(ws){
 });
 
   // ***********************
-  // ***********************)
+  // ***********************
 function parseClientCommand(sender, msg){
 
   var pass = msg.pass;
@@ -214,6 +220,49 @@ const influx = new Influx.InfluxDB({
     }
   ]);
  }
+
+////////////////////////////////////////////////////
+// Winfrog sockets
+const net = require('net');
+
+
+  
+  vessel = net.connect(1700, '192.168.42.111', function () {
+    console.log(('Connected'));
+
+    this.on('data', function (data) {
+      console.log("Vessel receives: " + data);
+    });
+
+  });
+
+  vessel.on('error', function(e){
+    console.log("Error in connection" + e);
+  });
+
+  var romeo = net.connect(1701, '192.168.42.111', function () {
+    console.log(('Connected'));
+
+    this.on('data', function (data) {
+      console.log("Romeo receives: " + data);
+    });
+  });
+
+  romeo.on('error', function(e){
+    console.log("Error in connection" + e);
+  });
+
+  var juliet = net.connect(1702, '192.168.42.111', function () {
+    console.log(('Connected'));
+
+    this.on('data', function (data) {
+      console.log("Juliet receives: " + data);
+    });
+  });
+
+  juliet.on('error', function(e){
+    console.log("Error in connection" + e);
+  });
 
 
 ////////////////////////////////////////////////////

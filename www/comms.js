@@ -59,7 +59,9 @@ function wsonmessagehandler(event){
         case 'GYRO':
             var pos = msg.pos;
             hdg.find(".val").text(pos.hdg.toFixed(2));
+            hdg.thehdg = pos.hdg;
             turns.find(".val").text(pos.turns.toFixed(2));
+            turns.theturns = pos.turns;
             if (pos.turns < 0){
                 turns.find(".dir").text("PRT");
             } else if (pos.turns > 0){
@@ -111,9 +113,11 @@ window.onload = function(){
     });
 
     hdg = $("#hdg");
+    hdg.thehdg = 0;
     turns = $("#turns");
+    turns.theturns = 0;
 
-    ws = new WebSocket('ws://'+ location.host +':41148');
+    ws = new WebSocket('ws://'+ location.hostname +':41148');
 
     ws.onopen = wsonopenhandler;
     ws.onmessage = wsonmessagehandler;
