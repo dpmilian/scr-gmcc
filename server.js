@@ -229,5 +229,5 @@ app.get('/cmd', function (req, res) {
 });
  
 app.listen(8000, function () {
-  console.log('Example app listening on port 8000!');
+  console.log('GMCC Server listening on port 8000');
 });
