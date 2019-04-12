@@ -7,9 +7,9 @@ var geometry, material, pod;
 var sky, cubeCamera;
 
 var parameters = {
-    distance: 300,
-    inclination: 0.49,
-    azimuth: 0.05
+    distance: 1000,
+    inclination: 0.4,
+    azimuth: 0.35
 };
 
 // ------------------------------
@@ -24,12 +24,23 @@ function deg(rad){
 
 var pointGeometry = new THREE.BufferGeometry();
 pointGeometry.dynamic = true;
-var pointMaterial = new THREE.PointsMaterial( {
-     size: .4,
-     color: 0x222299
+var pointMaterial = new THREE.LineBasicMaterial( {
+    //  size: .4,
+     color: 0xFFFFFF,
     //  emissive: 0xFF00FF,
-    //  transparent: false, opacity: 0.2
+     transparent: true,
+     opacity: 0.8,
+     lineWidth: 2
     } );
+// var tl = new THREE.TextureLoader();
+// tl.load( "textures/gradient.png", function ( map ) {
+//     map.anisotropy = 8;
+//     // map.repeat.set(2, 2);
+//     // map.offset.set(-.5,-.5);
+//     pointMaterial.map = map;
+//     // pointMaterial.emissiveMap = map;
+//     pointMaterial.needsUpdate = true;
+// } );
 
 
 var curveObject = null;
@@ -40,7 +51,7 @@ function updateCurve(theturns){
 
 
     if (curveObject != null) scene.remove(curveObject);
-    // theturns = -3 + cnt;
+    theturns = -3.4;// + cnt;
     // cnt+= .01;
     // console.log("Turns at " + theturns);
     if (theturns == 0) return;
@@ -48,13 +59,10 @@ function updateCurve(theturns){
     var absturns = Math.abs(theturns);
     var sign = theturns / absturns;
     var ps = [];
-    // var colors = [];
-
+ 
     var zrange = 40;
 
-    // var ppercurve = zrange * 50;
-    // if (ppercurve < 200) ppercurve = 200;
-
+ 
     var ppercurve = 500;
     var tstep =  Math.PI *absturns / (ppercurve);
     var zstep = zrange /ppercurve;
@@ -64,20 +72,13 @@ function updateCurve(theturns){
     for (var i = 0, t = 0, z = 0; i < ppercurve; i++, t += tstep, z += zstep) {
         ps.push(
             sign *10*Math.sin(t)*Math.cos(t),
-            zrange - z + 1,
+            z+1,
             sign * 10 * Math.sin(t) * Math.sin(t)
         );
-        // var color = new THREE.Color();
-        // color.setRGB(Math.sin(Math.PI*t),0,.5);
-        // // console.log(color);
-        // colors.push(color);
     }
         // console.log("TSTEP " + tstep + ", " + i + " steps vs " + (theturns/ tstep));
     pointGeometry.addAttribute('position', new THREE.Float32BufferAttribute(ps,3));
-    // pointGeometry.addAttribute('color', new THREE.Float32BufferAttribute(colors,3));
-    // pointGeometry.colors = colors;
-        // pointGeometry.colorsNeedUpdate = true;
-    // Create the final object to add to the scene
+ // Create the final object to add to the scene
     curveObject = new THREE.Points( pointGeometry, pointMaterial );
 
     scene.add(curveObject);
@@ -90,48 +91,18 @@ function init() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, .1, 20000);
     
     camera.position.set(0,25,60);
-    // camera.up = new THREE.Vector3(0,1,1);
-    // camera.lookAt(0, 10, 0);
-
-
-    // var axesHelper = new THREE.AxesHelper( 5 );
-    // scene.add( axesHelper );
-
-    light = new THREE.DirectionalLight( 0xffffff, 0.1 );
-    // light.position.set(200, 100, 200);
+    
+    light = new THREE.DirectionalLight( 0xff6000, 1 );
+    
     scene.add( light );
-
-    // light_h = new THREE.DirectionalLightHelper(light);
-    // scene.add(light_h);
-                
-    // var waterGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
-    // water = new THREE.Water(
-    //     waterGeometry,
-    //     {
-    //         textureWidth: 512,
-    //         textureHeight: 512,
-    //         waterNormals: new THREE.TextureLoader().load( 'textures/waternormals.jpg', function ( texture ) {
-    //             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    //         } ),
-    //         alpha: .8,
-    //         sunDirection: light.position.clone().normalize(),
-    //         sunColor: 0xffffff,
-    //         waterColor: 0x101e0f,
-    //         distortionScale: 5.7,
-    //         fog: scene.fog !== undefined
-    //     }
-    // );
-    // water.rotation.x =  -Math.PI / 2;
-    // scene.add( water );
-
 
     sky = new THREE.Sky();
     var uniforms = sky.material.uniforms;
-    uniforms[ 'turbidity' ].value = 10;
-    uniforms[ 'rayleigh' ].value = 2;
+    uniforms[ 'turbidity' ].value = 40;
+    uniforms[ 'rayleigh' ].value = .5;
     uniforms[ 'luminance' ].value = 1;
     uniforms[ 'mieCoefficient' ].value = 0.005;
-    uniforms[ 'mieDirectionalG' ].value = 0.8;
+    uniforms[ 'mieDirectionalG' ].value = 0.3;
 
     
     cubeCamera = new THREE.CubeCamera( 0.1, 1, 512 );
@@ -142,18 +113,20 @@ function init() {
 
     geometry = new THREE.CylinderGeometry( 20, 20, 2, 64 );
     material = new THREE.MeshPhongMaterial({
-        opacity: .4,
+        opacity: .8,
         premultipliedAlpha: true,
         transparent: true,
         color: 0xFFFFFF,
-        emissive: 0xFF6000,
-        reflectivity: .1,
-        emissiveIntensity: 1,
-        envMap: cubeCamera.renderTarget.texture,
+        emissive: 0xFF0000,
+        reflectivity: .8,
+        // shininess: 1,
+        refractionRatio: .8
+        // emissiveIntensity: 1,
+        // envMap: cubeCamera.renderTarget.texture,
         // side: THREE.DoubleSide
         } );
     pod = new THREE.Mesh(geometry, material);
-    pod.position.set(0 , 1, 0);
+    pod.position.set(0 , 0, 0);
     pod.rotation.set(0, Math.PI/2,0);
     
     thing = new THREE.Group();
@@ -179,9 +152,9 @@ function init() {
     var textureLoader2 = new THREE.TextureLoader();
     textureLoader2.load( "textures/logo.png", function ( map ) {
         map.anisotropy = 8;
-        // map.repeat.set(2, 2);
-        // map.offset.set(-.5,-.5);
-        // material.map = map;
+        map.repeat.set(4, 10);
+        map.offset.set(-.8,-1.5);
+        // material.displacementMap = map;
         material.emissiveMap = map;
         material.needsUpdate = true;
     } );
