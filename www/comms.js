@@ -30,11 +30,11 @@ function wsonmessagehandler(event){
 
             $(".comm-option").on("click", function(e){
                 var cmd = {
-                    cmd: "PRT",
-                    port: $(this).text(),
-                    pass: $("#pass").val(),
-                    baudrate: 38600,
-                    dive: dive.thedive
+                    'cmd': "PRT",
+                    'port': $(this).text(),
+                    'pass': $("#pass").val(),
+                    'baudrate': 38600,
+                    'dive': dive.thedive
                 };
         
                 ws.send(JSON.stringify(cmd));
@@ -64,6 +64,9 @@ function wsonmessagehandler(event){
             break;
         case 'GYRO':
             var pos = msg.pos;
+            var clump = msg.clump;
+            var divenum = msg.dive;
+
             hdg.find(".val").text(pos.hdg.toFixed(2));
             hdg.thehdg = pos.hdg;
             turns.find(".val").text(pos.turns.toFixed(2));
@@ -73,14 +76,14 @@ function wsonmessagehandler(event){
             } else if (pos.turns > 0){
                 turns.find(".dir").text("STB");
             } else turns.find("dir").text("");
-            depth.find(".val").text(pos.depth.toFixed(2));
-            depth.thedepth = pos.depth;
-            dive.find(".val").text(pos.dive);
-            dive.thedive = pos.dive;
+            depth.find(".val").text(clump.depth.toFixed(2));
+            depth.thedepth = clump.depth;
+            dive.find(".val").text(divenum);
+            dive.thedive = divenum;
 
 
             // and update pod orientation
-            thing.rotation.set(0, rad(pos.hdg), 0);
+            thing.rotation.set(0, -rad(pos.hdg), 0);
             // grid.rotation.set(0, rad(pos.hdg), 0);
 
         break;

@@ -23,7 +23,7 @@ function deg(rad){
 }
 
 var curveObject = null;
-var cnt = 0;
+// var cnt = 0;
 var zoffset = -20;
 var zrange = 40;
 
@@ -34,8 +34,8 @@ function updateCurve(theturns){
 
     var pointGeometry = new THREE.BufferGeometry();
 
-    theturns = -3.4 + cnt;
-    cnt+= .01;
+    // theturns = -3.4 + cnt;
+    // cnt+= .01;
     // console.log("Turns at " + theturns);
     if (theturns == 0) return;
 

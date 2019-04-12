@@ -11,8 +11,21 @@ var status = {
   'available_ports': [],
   'dive': 1,
   'rovname': 'ROMEO',
-  'depth': 0
+  'releasting': 0,
+  'northing':0,
+  'vessel': {
+    'n': 0,
+    'e': 0,
+    'depth': -1
+  },
+  'clump': {
+    'n': 0,
+    'e': 0,
+    'depth': 0
+  },
 };
+
+var clump_history = [];
 
 var pos = {
   'hdg': 0,
@@ -43,6 +56,8 @@ var comms = {
 
     var ok = fields[2];
 
+    // console.log("Received serial");
+    // console.log(fields);
     var dhdg = Number(fields[1]);
     
     if (ok != "1") return;
@@ -61,20 +76,32 @@ var comms = {
 
     if (pos.cnt % 10 == 0){     // Send to interface every 500ms (20 samples)
       if (status.mode != 'A') console.log("Wrong mode, won't log data in absolute heading values (still sending it to viewer)");
-      else logGyroData(pos.hdg.toFixed(4), pos.turns.toFixed(4), pos.cnt, status.dive, status.rovname);
+      else logGyroData(
+        pos.hdg.toFixed(4),
+        pos.turns.toFixed(4), 
+        pos.cnt, 
+        status.dive, 
+        status.rovname, 
+        status.clump.n, 
+        status.clump.e, 
+        status.clump.depth);
       // console.log("[" + pos.cnt + "] Calculated heading: " + pos.hdg + ", total rotation: " + pos.turns);
 
-    }
-    
+
       var posmsg = {
-        cmd: "GYRO",
-        pos: pos
+        'cmd': "GYRO",
+        'pos': pos,
+        'clump': status.clump,
+        'dive': status.dive
       };
       var sposmsg = JSON.stringify(posmsg);
 
       wsclients.forEach(function(ws){
         ws.send(sposmsg);
       });
+    }
+    
+
     }
 
   },
@@ -202,10 +229,13 @@ const influx = new Influx.InfluxDB({
         hdg: Influx.FieldType.FLOAT,
         turns: Influx.FieldType.FLOAT,
         cnt: Influx.FieldType.INTEGER,
-        dive: Influx.FieldType.INTEGER
+        easting: Influx.FieldType.FLOAT,
+        northing: Influx.FieldType.FLOAT,
+        depth: Influx.FieldType.FLOAT
       },
       tags: [
-        'rov'
+        'rov',
+        'dive'
       ]
     }
   ]
@@ -213,13 +243,13 @@ const influx = new Influx.InfluxDB({
 
  influx.createDatabase('umbilical_conditioning_magellan_db');
 
- function logGyroData(hdg, turns, cnt, dive, rovname){
+ function logGyroData(hdg, turns, cnt, divenum, rovname, ee, nn, dd){
   
   influx.writePoints([
     {
       measurement: 'gyro',
-      tags: { rov: rovname },
-      fields: { hdg: hdg, cnt: cnt, turns: turns, dive: dive},
+      tags: { rov: rovname, dive: divenum },
+      fields: { hdg: hdg, cnt: cnt, turns: turns, easting: ee, northing: nn, depth: dd},
     }
   ]);
  }
@@ -228,13 +258,81 @@ const influx = new Influx.InfluxDB({
 // Winfrog sockets
 const net = require('net');
 
-
+const NAV_SERVER = '192.168.42.111';
+const VESSEL_PORT = 5777;
+const CLUMP_PORT = 1701;
+const POSITION_AVERAGE_WINDOW = 5;
   
-  vessel = net.connect(1700, '192.168.42.111', function () {
-    console.log(('Connected'));
+var vessel_buffer = "";
+var clump_buffer = "";
+
+///////////////////////
+
+function parse_nav_buffer(buffer){
+
+  var pos = {
+    'n': -1,
+    'e': -1,
+    'depth': -1
+  };
+
+  // console.log("Buffer @ " + buffer);
+  var ix = buffer.lastIndexOf("$scr");
+  var last_data = buffer.substr(ix);
+
+  var ixlfcr = last_data.indexOf("\r\n"); 
+  if (ixlfcr != -1){
+    last_data = last_data.substring(0, ixlfcr);
+    // console.log("Full position " + last_data);
+    buffer = buffer.substr(ixlfcr + 2);
+    // console.log("\tRemains: " + buffer);
+    var fields = last_data.split(",");
+    var l = fields.length;
+
+    if (l >= 2) pos.n = parseFloat(fields[1]);
+    if (l >= 3) pos.e = parseFloat(fields[2]);
+    if (l >= 4) pos.depth = parseFloat(fields[3]);
+  }
+
+  return pos;
+}
+
+///////////////////////
+
+function average_positions(history){
+
+  var pos = {
+    'n': 0,
+    'e': 0,
+    'depth': 0
+  };
+
+  var l = history.length;
+
+  history.forEach(function(pos_ix){
+    pos.n += pos_ix.n / l;
+    pos.e += pos_ix.e / l;
+    pos.depth += pos_ix.depth / l;
+    // console.log("pos_ix.depth = " + pos_ix.depth);
+  });
+
+  return pos;
+}
+
+///////////////////////
+
+  vessel = net.connect(VESSEL_PORT, NAV_SERVER, function () {
+    console.log('Connected to VESSEL port');
 
     this.on('data', function (data) {
-      console.log("Vessel receives: " + data);
+      vessel_buffer += data;
+      var pos = parse_nav_buffer(vessel_buffer);
+     
+      if (!isNaN(pos.n) && (pos.n != -1)){
+        status.vessel = pos;
+      } 
+      // else console.log("Incomplete vessel position " + vessel_buffer);
+      
     });
 
   });
@@ -243,27 +341,34 @@ const net = require('net');
     console.log("Error in connection" + e);
   });
 
-  var romeo = net.connect(1701, '192.168.42.111', function () {
-    console.log(('Connected'));
+  var romeo = net.connect(CLUMP_PORT, NAV_SERVER, function () {
+    console.log('Connected to ROMEO port');
 
     this.on('data', function (data) {
-      console.log("Romeo receives: " + data);
+
+      // console.log("Clump: " + data);
+      clump_buffer += data;
+      var pos = parse_nav_buffer(clump_buffer);
+      if (!isNaN(pos.n) && (pos.n != -1)){
+        // console.log("New Romeo position");
+        // console.log(pos);
+        clump_history.push(pos);
+        if (clump_history.length > POSITION_AVERAGE_WINDOW) clump_history.pop();
+        var abs_clump = average_positions(clump_history);
+        
+        // view/ log only relative positions
+        status.clump.n = status.vessel.n - abs_clump.n;
+        status.clump.e = status.vessel.e - abs_clump.e;
+        status.clump.depth = abs_clump.depth;
+
+        console.log("Clump position: ");
+        console.log(status.clump);
+      } 
+      // else console.log("Incomplete clump position " + clump_buffer);
     });
   });
 
   romeo.on('error', function(e){
-    console.log("Error in connection" + e);
-  });
-
-  var juliet = net.connect(1702, '192.168.42.111', function () {
-    console.log(('Connected'));
-
-    this.on('data', function (data) {
-      console.log("Juliet receives: " + data);
-    });
-  });
-
-  juliet.on('error', function(e){
     console.log("Error in connection" + e);
   });
 
@@ -281,5 +386,5 @@ app.get('/cmd', function (req, res) {
 });
  
 app.listen(8000, function () {
-  console.log('GMCC Server listening on port 8000');
+  console.log('MaGyCC Server listening on port 8000');
 });
