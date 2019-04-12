@@ -10,7 +10,8 @@ var status = {
   'baudrate': '',
   'available_ports': [],
   'dive': 1,
-  'rovname': 'ROMEO'
+  'rovname': 'ROMEO',
+  'depth': 0
 };
 
 var pos = {
@@ -148,6 +149,8 @@ function parseClientCommand(sender, msg){
         status.comms_connected = true;
 
         comms.connect(status.port, status.baudrate);
+
+        status.dive = msg.dive;
         break;
 
       // ******

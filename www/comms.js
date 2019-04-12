@@ -1,4 +1,4 @@
-var hdg, turns;
+var hdg, turns, depth;
 
 var ws;
 // event emmited when connected
@@ -33,7 +33,8 @@ function wsonmessagehandler(event){
                     cmd: "PRT",
                     port: $(this).text(),
                     pass: $("#pass").val(),
-                    baudrate: 38600
+                    baudrate: 38600,
+                    dive: dive.thedive
                 };
         
                 ws.send(JSON.stringify(cmd));
@@ -44,8 +45,13 @@ function wsonmessagehandler(event){
             if (status.comms_connected){
                 pconnected.text("CONNECTED");
                 pconnected.addClass("active");
+                pconnected.connected = true;
+                dive.addClass("active");
             } 
-            else pconnected.text("DISCONNECTED")
+            else {
+                pconnected.text("DISCONNECTED")
+                pconnected.connected = false;
+            }
 
             var pmode = $("#mode");
             pmode.find(".val").text(status.mode);
@@ -67,6 +73,11 @@ function wsonmessagehandler(event){
             } else if (pos.turns > 0){
                 turns.find(".dir").text("STB");
             } else turns.find("dir").text("");
+            depth.find(".val").text(pos.depth.toFixed(2));
+            depth.thedepth = pos.depth;
+            dive.find(".val").text(pos.dive);
+            dive.thedive = pos.dive;
+
 
             // and update pod orientation
             thing.rotation.set(0, rad(pos.hdg), 0);
@@ -116,7 +127,25 @@ window.onload = function(){
     hdg.thehdg = 0;
     turns = $("#turns");
     turns.theturns = 0;
+    depth = $("#depth");
+    depth.thedepth = 0;
+    dive = $("#dive");
+    dive.thedive = 0;
 
+    dive.find("button").on("click", function(){
+
+        var go = $(this).attr('go');
+        console.log(go);
+        if ($("#connected").connected) return;
+
+        if (go == "up"){
+            dive.thedive++;
+            dive.find(".val").text(dive.thedive);
+        } else if (go == "down"){
+            dive.thedive--;
+            dive.find(".val").text(dive.thedive);
+        }
+    });
     ws = new WebSocket('ws://'+ location.hostname +':41148');
 
     ws.onopen = wsonopenhandler;

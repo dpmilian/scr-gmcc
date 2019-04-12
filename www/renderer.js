@@ -9,7 +9,7 @@ var sky, cubeCamera;
 var parameters = {
     distance: 1000,
     inclination: 0.4,
-    azimuth: 0.35
+    azimuth: 0.05
 };
 
 // ------------------------------
@@ -22,48 +22,31 @@ function deg(rad){
     return rad /Math.PI * 180;
 }
 
-var pointGeometry = new THREE.BufferGeometry();
-pointGeometry.dynamic = true;
-var pointMaterial = new THREE.LineBasicMaterial( {
-    //  size: .4,
-     color: 0xFFFFFF,
-    //  emissive: 0xFF00FF,
-     transparent: true,
-     opacity: 0.8,
-     lineWidth: 2
-    } );
-// var tl = new THREE.TextureLoader();
-// tl.load( "textures/gradient.png", function ( map ) {
-//     map.anisotropy = 8;
-//     // map.repeat.set(2, 2);
-//     // map.offset.set(-.5,-.5);
-//     pointMaterial.map = map;
-//     // pointMaterial.emissiveMap = map;
-//     pointMaterial.needsUpdate = true;
-// } );
-
-
 var curveObject = null;
-// var cnt = 0;
-
+var cnt = 0;
+var zoffset = -20;
+var zrange = 40;
 
 function updateCurve(theturns){
 
 
     if (curveObject != null) scene.remove(curveObject);
-    theturns = -3.4;// + cnt;
-    // cnt+= .01;
+
+    var pointGeometry = new THREE.BufferGeometry();
+
+    theturns = -3.4 + cnt;
+    cnt+= .01;
     // console.log("Turns at " + theturns);
     if (theturns == 0) return;
 
     var absturns = Math.abs(theturns);
     var sign = theturns / absturns;
     var ps = [];
- 
-    var zrange = 40;
+
 
  
-    var ppercurve = 500;
+    var ppercurve = 500 * absturns;
+    if (ppercurve < 200) ppercurve = 200;
     var tstep =  Math.PI *absturns / (ppercurve);
     var zstep = zrange /ppercurve;
     
@@ -72,27 +55,41 @@ function updateCurve(theturns){
     for (var i = 0, t = 0, z = 0; i < ppercurve; i++, t += tstep, z += zstep) {
         ps.push(
             sign *10*Math.sin(t)*Math.cos(t),
-            z+1,
+            z + zoffset,
             sign * 10 * Math.sin(t) * Math.sin(t)
         );
     }
         // console.log("TSTEP " + tstep + ", " + i + " steps vs " + (theturns/ tstep));
     pointGeometry.addAttribute('position', new THREE.Float32BufferAttribute(ps,3));
  // Create the final object to add to the scene
-    curveObject = new THREE.Points( pointGeometry, pointMaterial );
+    // var curve = new MeshLine();
+    // curve.setGeometry(new THREE.Float32BufferAttribute(ps,3), function(p){ return 10;});
+
+    var mlmaterial = new THREE.LineBasicMaterial({
+        color: 0xFF6000,
+        linewidth: 3
+    });
+    // curveObject = new THREE.Mesh(curve, mlmaterial);
+    curveObject = new THREE.Line( pointGeometry, mlmaterial);
 
     scene.add(curveObject);
 }
+
+var font = null;
+var depthGroup;
+var depth;
+var halfGroup;
+var halftext = null;
 
 function init() {
     
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, .1, 20000);
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, .1, 20000);
     
-    camera.position.set(0,25,60);
+    camera.position.set(0,15,50);
     
-    light = new THREE.DirectionalLight( 0xff6000, 1 );
+    light = new THREE.DirectionalLight( 0xffffff, 1 );
     
     scene.add( light );
 
@@ -102,7 +99,7 @@ function init() {
     uniforms[ 'rayleigh' ].value = .5;
     uniforms[ 'luminance' ].value = 1;
     uniforms[ 'mieCoefficient' ].value = 0.005;
-    uniforms[ 'mieDirectionalG' ].value = 0.3;
+    uniforms[ 'mieDirectionalG' ].value = 0.7;
 
     
     cubeCamera = new THREE.CubeCamera( 0.1, 1, 512 );
@@ -111,51 +108,88 @@ function init() {
     scene.background = cubeCamera.renderTarget;
     
 
+    var loader = new THREE.FontLoader();
+
+    loader.load( 'fonts/droid_sans_regular.typeface.json', function(afont){
+        font = afont;
+    });
+    var depthGroup = new THREE.Group();
+    depthGroup.position.set(0, zrange + zoffset -1);
+    scene.add(depthGroup);
+
     geometry = new THREE.CylinderGeometry( 20, 20, 2, 64 );
     material = new THREE.MeshPhongMaterial({
         opacity: .8,
         premultipliedAlpha: true,
         transparent: true,
         color: 0xFFFFFF,
-        emissive: 0xFF0000,
-        reflectivity: .8,
-        // shininess: 1,
-        refractionRatio: .8
-        // emissiveIntensity: 1,
-        // envMap: cubeCamera.renderTarget.texture,
-        // side: THREE.DoubleSide
-        } );
+        // emissive: 0xAAAAAA
+    } );
     pod = new THREE.Mesh(geometry, material);
-    pod.position.set(0 , 0, 0);
-    pod.rotation.set(0, Math.PI/2,0);
+    pod.position.set(0 , zoffset -1, 0);
+    // pod.rotation.set(0, Math.PI/2,0);
     
     thing = new THREE.Group();
     thing.add(pod);
 
     grid = new THREE.PolarGridHelper(20, 5, 4, 128, 0x222, 0x449);
-    grid.position.set(0, 1, 0);
+    grid.position.set(0, zoffset, 0);
     thing.add(grid);
 
-    var dir = new THREE.Vector3( 0, 0, -1);
 
+    var sfcg = new THREE.CircleGeometry(20, 64);
+    sfcg.vertices.shift();
+    var sfcm = new THREE.LineBasicMaterial({
+        color: 0x449,
+        linewidth: 1.2
+    });
+    var sfc = new THREE.LineLoop(sfcg, sfcm);
+    // sfc.rotation.set(0, Math.Pi/2, 0);
+    sfc.rotation.x = Math.PI/2;
+    
+    // var depthsfc = sfc.clone();
+    // depthsfc.material.color = 0xFFFFFF;
+    // depthGroup.add(depthsfc);
+
+    sfc.position.set(0, zrange + zoffset-1, 0);
+    scene.add(sfc);
+
+    var halfg = new THREE.CircleGeometry(20, 64);
+    halfg.vertices.shift();
+    
+    var halfsfc = new THREE.LineLoop(halfg, sfcm);
+    // sfc.rotation.set(0, Math.Pi/2, 0);
+    halfsfc.rotation.x = Math.PI/2;
+    
+    // var depthsfc = sfc.clone();
+    // depthsfc.material.color = 0xFFFFFF;
+    // depthGroup.add(depthsfc);
+
+    halfGroup = new THREE.Group();
+    halfGroup.add(halfsfc);
+    halfGroup.position.set(0, zrange/2 + zoffset-1, 0);
+
+    scene.add(halfGroup);
+
+
+
+    var dir = new THREE.Vector3( 0, 0, -1);
     //normalize the direction vector (convert to vector of length 1)
     dir.normalize();
-    
-    var origin = new THREE.Vector3( 0, 1, 0 );
+    var origin = new THREE.Vector3( 0, zoffset, 0 );
     var length = 30;
-    var hex = 0xffff00;
-    
+    var hex = 0xff2234;
     var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
     thing.add( arrowHelper );
     scene.add(thing);
     
     var textureLoader2 = new THREE.TextureLoader();
-    textureLoader2.load( "textures/logo.png", function ( map ) {
+    textureLoader2.load( "textures/ss.jpg", function ( map ) {
         map.anisotropy = 8;
         map.repeat.set(4, 10);
         map.offset.set(-.8,-1.5);
         // material.displacementMap = map;
-        material.emissiveMap = map;
+        material.map = map;
         material.needsUpdate = true;
     } );
 
@@ -163,11 +197,11 @@ function init() {
 
    
 
-    // var spotLight = new THREE.SpotLight ( 0x112330);
-    // spotLight.position.set( -.5, .5, 2 );
-    // spotLight.angle = 2;
-    // spotLight.penumbra = .21;
-    // scene.add( spotLight );
+    var spotLight = new THREE.SpotLight ( 0xFFFFFF);
+    spotLight.position.set( 0, 4, 2 );
+    spotLight.angle = 2;
+    spotLight.penumbra = 11;
+    scene.add( spotLight );
 
  
     renderer = new THREE.WebGLRenderer();
@@ -230,6 +264,34 @@ function polarToCartesian(r, phi) {
     return pos;
 }
 
+var thedepth = -1;
+
+var textm = new THREE.MeshBasicMaterial({
+    color: 0x111133,
+    transparent: true,
+    opacity: 0.8
+});
+
+function updateDepth(newdepth){
+
+    thedepth = newdepth;
+    
+    if (font == null) return;
+    if (halftext != null) halfGroup.remove(halftext);
+
+    var sdepth = thedepth + ' m';
+    
+    var textg = new THREE.TextGeometry(sdepth, {
+		font: font,
+		size: 2,
+		height: .1,
+		curveSegments: 12
+    } );
+
+    halftext = new THREE.Mesh(textg, textm);
+    halftext.position.set(20, 0, 5);
+     halfGroup.add(halftext);
+}
 // ------------------------------
 
 function animate() {
@@ -242,6 +304,7 @@ function animate() {
 
     // water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
     if (turns) updateCurve(turns.theturns);
+    if (depth && depth.thedepth != thedepth) updateDepth(depth.thedepth);
 
     renderer.render(scene, camera);
 

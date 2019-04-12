@@ -6,7 +6,7 @@
     <title>SCR MAGYCC: Magellan Gyroscope for Cable Conditioning</title>
     <script src="three.js"></script>
     <script src="OrbitControls.js"></script>
-    <script type="text/javascript" src="Water.js"></script>
+    <script type="text/javascript" src="THREE.MeshLine.js"></script>
     <script type="text/javascript" src="Sky.js"></script>
 
     <link rel="stylesheet" href="w3.css">
@@ -100,11 +100,33 @@
             letter-spacing: 2px;
             
         }
+        div.option button {
+            color: #FF6000;
+            background: #333;
+            font-weight: bold;
+            font-size: 18px;
+            padding-left: 5px;
+            padding-right: 5px;
+            margin-left: 10px;
+            margin-right: 10px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            border: 1px solid #FF6000;
+        }
 
-        div.option:hover {
+        div.option button:hover {
             background: #FF6000;
             color: #333;
         }
+
+        div.option:hover:not(.static) {
+            background: #FF6000;
+            color: #333;
+        }
+
+        /* div.option.centered {
+            text-align: center;
+        } */
 
         div.option.active {
             background: #FF6000;
@@ -200,13 +222,16 @@
     </div>
     
     <div class="group options">
-        <div class="option" id="connect"> CONNECT </div>
-        <div class="option" id="zero"> ZERO TURNS </div>
-        <div class="option" id="mode"> GYRO MODE <span class="val">R</span> </div>
+        <div class="option"> <img src="textures/logo_long.png" style="width: 100%; background-color: rgba(255, 255, 255,.9)"></div>
+        <div class="option" id="connect"> DISCONNECTED </div>
+        <div class="option" id="zero"> RESET TURNS </div>
+        <div class="option" id="mode"> GYRO MODE: <span class="val">R</span> </div>
  
         <div class="option" id="hdg"> <span class="val">0</span>º</div>
         <div class="option" id="turns"><span class="val">0</span> <span class="dir">PRT</span> </div>
-        
+        <div class="option" id="depth"> <span class="val">0</span>m</div>
+        <div class="option static centered" id="dive"> <button go="down">-</button>Dive <span class="val">0</span><button go="up">+</button></div>
+
         <div class=" w3-dropdown-hover">
             <button id="comport" class="w3-button w3-black">Select Com Port</button>
             <div id="port-list" class="w3-dropdown-content w3-bar-block w3-border">
