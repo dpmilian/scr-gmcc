@@ -70,6 +70,11 @@
             position: relative;
             z-index: 10;
         }
+        img.logo {
+            width: 250px;
+            height: 80px;
+            background-color: rgba(255, 255, 255,.9);
+        }
 
         div.drop-group{
             display: inline-block;
@@ -82,41 +87,56 @@
 
         }
         div.options {
-            position: absolute;
-            right: 4px;
+            /* position: absolute;
+            right: 10px; */
             width: 200px;
+            height: 80px;
             text-align: right;
             overflow: visible;
         }
 
         div.option {
             color: #FF6000;
-            background: #333;
+            /* background: rgb(51, 51, 51,.8); */
             font-weight: bold;
             font-size: 18px;
-            padding: 2px;
-            margin: 1px;
+            padding: 5px;
+            margin: 2px;
             cursor: pointer;
             letter-spacing: 2px;
+            width: 100%;
             
         }
         div.option button {
             color: #FF6000;
-            background: #333;
+            background: none;
             font-weight: bold;
             font-size: 18px;
             padding-left: 5px;
             padding-right: 5px;
-            margin-left: 10px;
-            margin-right: 10px;
+            margin-left: 5px;
+            margin-right: 5px;
             cursor: pointer;
             letter-spacing: 2px;
-            border: 1px solid #FF6000;
+            border: none;
+            /* border: 1px solid #FF6000; */
         }
 
         div.option button:hover {
             background: #FF6000;
             color: #333;
+        }
+
+        div.option button.active {
+            background: #FF6000;
+            color: #333;
+        }
+
+        div.go-on {
+            width: 100% !important;
+        }
+        button#comport {
+            width: 100%;
         }
 
         div.option:hover:not(.static) {
@@ -145,6 +165,7 @@
         input[type=password] {
             display: block;
             width: 100%;
+            /* height: 70px; */
             padding-top: 24px;
             border: none;
             border-radius: 0;
@@ -201,44 +222,50 @@
             background: rgba(33, 150, 243, 0.3);
         }
 
+        div.main-view {
+            background-image: none !important;
+        }
+
         div#view {
 
             width: 100%;
-            background: transparent;
+            height: 100%;
+            /* background-image: url('textures/pier.jpg'); */
             position: absolute;
             top: 0;
             left: 0;
+            overflow: hidden;
         }
     </style>
 </head>
 
 
 <body>
-
+<!-- 
     <div class="group">
         <input type="password" id="pass" required="required" value="">
         <label class="for" for="pass">admin password</label>
         <div class="bar"></div>
-    </div>
+    </div> -->
     
-    <div class="group options">
-        <div class="option"> <img src="textures/logo_long.png" style="width: 100%; background-color: rgba(255, 255, 255,.9)"></div>
-        <div class="option" id="connect"> DISCONNECTED </div>
+    <!-- <div class="group options"> -->
+        <!-- <div class="option"> <img src="textures/logo_long.png" style="width: 100%; background-color: rgba(255, 255, 255,.9)"></div> -->
+        <!-- <div class="option" id="connect"> DISCONNECTED </div>
         <div class="option" id="zero"> RESET TURNS </div>
-        <div class="option" id="mode"> GYRO MODE: <span class="val">R</span> </div>
+        <div class="option" id="mode"> GYRO MODE: <span class="val">R</span> </div> -->
  
-        <div class="option" id="hdg"> <span class="val">0</span>º</div>
+        <!-- <div class="option" id="hdg"> <span class="val">0</span>º</div>
         <div class="option" id="turns"><span class="val">0</span> <span class="dir">PRT</span> </div>
         <div class="option" id="depth"> <span class="val">0</span>m</div>
-        <div class="option static centered" id="dive"> <button go="down">-</button>Dive <span class="val">0</span><button go="up">+</button></div>
+        <div class="option static centered" id="dive"> <button go="down">-</button>Dive <span class="val">0</span><button go="up">+</button><button id="set-dive" go="go">GO</button></div>
 
         <div class=" w3-dropdown-hover">
             <button id="comport" class="w3-button w3-black">Select Com Port</button>
             <div id="port-list" class="w3-dropdown-content w3-bar-block w3-border">
                 <a href="#" class="w3-bar-item w3-button">---</a>
             </div>
-        </div>
-    </div>
+        </div> -->
+    <!-- </div> -->
         
 
 
@@ -247,7 +274,9 @@
     </div>
 
     <script type="text/javascript" src="./jquery-3.3.1.min.js"></script>
-    
+
+    <script type="text/javascript" src="./CSS3DRenderer.js"></script>
+    <script type="text/javascript" src="./3dhtml.js"></script>
     <script type="text/javascript" src="./renderer.js"></script>
     <script type="text/javascript" src="./comms.js"></script>
 

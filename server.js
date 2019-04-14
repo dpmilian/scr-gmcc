@@ -170,14 +170,12 @@ function parseClientCommand(sender, msg){
     switch(msg.cmd){
 
       // ******
-      case "PRT":
+      case "PORT":
         status.port = msg.port;
         status.baudrate = msg.baudrate;
         status.comms_connected = true;
 
         comms.connect(status.port, status.baudrate);
-
-        status.dive = msg.dive;
         break;
 
       // ******
@@ -202,7 +200,9 @@ function parseClientCommand(sender, msg){
           console.log("Sent A Mode request but comms not connected");
         }
         break;
-  
+      // ******
+      case "DIVE":
+        status.dive = msg.dive;
     }
   }
 

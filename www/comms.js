@@ -30,16 +30,28 @@ function wsonmessagehandler(event){
 
             $(".comm-option").on("click", function(e){
                 var cmd = {
-                    'cmd': "PRT",
+                    'cmd': "PORT",
                     'port': $(this).text(),
                     'pass': $("#pass").val(),
-                    'baudrate': 38600,
-                    'dive': dive.thedive
+                    'baudrate': 38600                
                 };
-        
                 ws.send(JSON.stringify(cmd));
         
             });
+
+            $("button#set-dive").on("click", function(e){
+                var cmd = {
+                    'cmd': "DIVE",
+                    'dive': dive.thedive,
+                    'pass': $("#pass").val(),
+                };
+                ws.send(JSON.stringify(cmd));
+            });
+            $("button#set-dive").removeClass("active");
+            var divenum = status.dive;
+            console.log("Status sets dive number to " + divenum);
+            dive.find(".val").text(divenum);
+            dive.thedive = divenum;
 
             var pconnected = $("#connect");
             if (status.comms_connected){
@@ -58,7 +70,7 @@ function wsonmessagehandler(event){
 
             var pcomport = $("#comport");
             if (status.port != ""){
-                pcomport.text(status.port);
+                pcomport.text("Serial Port: " + status.port.susbstr(status.port.lastIndexOf("/")));
             }
 
             break;
@@ -72,9 +84,9 @@ function wsonmessagehandler(event){
             turns.find(".val").text(pos.turns.toFixed(2));
             turns.theturns = pos.turns;
             if (pos.turns < 0){
-                turns.find(".dir").text("PRT");
+                turns.find(".dir").text("TURNS TO PRT");
             } else if (pos.turns > 0){
-                turns.find(".dir").text("STB");
+                turns.find(".dir").text("TURNS TO STB");
             } else turns.find("dir").text("");
             depth.find(".val").text(clump.depth.toFixed(2));
             depth.thedepth = clump.depth;
@@ -100,9 +112,9 @@ window.onload = function(){
     pass.on("click", function(e){
         this.value = "";
     });
-    pass.on("blur", function(e){
-        if (this.value === "") this.value= "type admin password";
-    });
+    // pass.on("blur", function(e){
+    //     if (this.value === "") this.value= "";
+    // });
     pass.on("keydown", function(e){
         e.stopPropagation();
     });
@@ -138,16 +150,18 @@ window.onload = function(){
     dive.find("button").on("click", function(){
 
         var go = $(this).attr('go');
-        console.log(go);
+        console.log("GO " + go);
         if ($("#connected").connected) return;
 
         if (go == "up"){
             dive.thedive++;
             dive.find(".val").text(dive.thedive);
         } else if (go == "down"){
-            dive.thedive--;
+            if (dive.thedive > 0) dive.thedive--;
+            else return;
             dive.find(".val").text(dive.thedive);
-        }
+        } 
+        $("button#set-dive").addClass("active");
     });
     ws = new WebSocket('ws://'+ location.hostname +':41148');
 
